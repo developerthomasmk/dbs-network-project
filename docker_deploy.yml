@@ -1,0 +1,41 @@
+---
+- name: Deploy Apache Docker Container
+  hosts: localhost
+  become: true
+  tasks:
+    - name: Ensure Docker is installed
+      apt:
+        name: docker.io
+        state: present
+        update_cache: yes
+
+    - name: Ensure Docker is running
+      service:
+        name: docker
+        state: started
+        enabled: true
+
+    - name: Pull Apache Docker image
+      docker_image:
+        name: httpd
+        tag: latest
+        source: pull
+
+    - name: Create a custom Docker network
+      docker_network:
+        name: custom_network
+        ipam_config:
+          - subnet: 172.168.10.0/30
+
+    - name: Run Apache container
+      docker_container:
+        name: apache_container
+        image: httpd:latest
+        state: started
+        restart_policy: always
+        networks:
+          - name: custom_network
+        ports:
+          - "80:80"
+      volumes:
+        - "/var/www/html:/usr/local/apache2/htdocs/"
