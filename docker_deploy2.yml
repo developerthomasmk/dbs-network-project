@@ -1,0 +1,49 @@
+---
+- name: Deploy Apache Docker Container
+  hosts: all
+  become: true
+
+  tasks:
+    - name: Ensure Docker is installed
+      apt:
+        name: docker.io
+        state: present
+        update_cache: yes
+
+    - name: Ensure Docker is started
+      service:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Create a custom Docker network
+      docker_network:
+        name: custom_network
+        driver: bridge
+        ipam_config:
+          - subnet: 172.168.10.0/30
+        state: present
+
+    - name: Deploy Apache Docker container
+      docker_container:
+        name: apache_container
+        image: httpd:latest
+        state: started
+        restart_policy: always
+        networks:
+          - name: custom_network
+            ipv4_address: 172.168.10.2
+
+    - name: Copy custom index.html into the Apache container
+      copy:
+        content: "<html><body><h1>Welcome to Apache!</h1></body></html>"
+        dest: /tmp/index.html
+
+    - name: Copy index.html to Apache container
+      command: docker cp /tmp/index.html apache_container:/usr/local/apache2/htdocs/index.html
+
+  handlers:
+    - name: Restart Docker
+      service:
+        name: docker
+        state: restarted
