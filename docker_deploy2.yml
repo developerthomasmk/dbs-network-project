@@ -30,13 +30,16 @@
         image: httpd:latest
         state: started
         restart_policy: always
+        ports:
+          - "80:80"
         networks:
           - name: custom_network
             ipv4_address: 172.168.10.2
 
     - name: Copy custom index.html into the Apache container
       copy:
-        content: "<html><body><h1>Welcome to Apache!</h1></body></html>"
+        #content: "<html><body><h1>Welcome to Apache!</h1></body></html>"
+        src: "/home/ubuntu/dbs-network-project/index.html"
         dest: /tmp/index.html
 
     - name: Copy index.html to Apache container
